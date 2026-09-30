@@ -1,300 +1,501 @@
 import streamlit as st
 from huggingface_hub import InferenceClient
 import PyPDF2
-from gtts import gTTS
+from gTTS import gTTS
 import io, tempfile, os
 
-# ═══════════════════════════════════════════
-# CONFIG
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
 HF_TOKEN = st.secrets["HF_TOKEN"]
 client = InferenceClient(token=HF_TOKEN)
-
 CHAT_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
-WHISPER_MODEL = "openai/whisper-large-v3"
 
-st.set_page_config(
-    page_title="MYRAA",
-    page_icon="◆",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="MYRAA", page_icon="🔵", layout="wide", initial_sidebar_state="collapsed")
 
-# ═══════════════════════════════════════════
-# PREMIUM CSS — ChatGPT + Gemini + DeepSeek Style
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
+# JARVIS CSS — IRON MAN STYLE
+# ═══════════════════════════════════════
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
     /* ═══ GLOBAL ═══ */
-    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-    html, body, [class*="css"] { color-scheme: dark; }
+    * { font-family: 'Rajdhani', sans-serif; }
     
     .stApp {
-        background: #212121;
-        color: #ececec;
+        background: #000508;
+        background-image: 
+            radial-gradient(circle at 20% 10%, #001a3a 0%, transparent 40%),
+            radial-gradient(circle at 80% 90%, #001030 0%, transparent 40%),
+            linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+        color: #a8e8ff;
+        overflow-x: hidden;
     }
     
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding-top: 1rem !important; max-width: 900px; }
+    .block-container { padding: 0 !important; max-width: 100% !important; }
 
-    /* ═══ SIDEBAR — ChatGPT style ═══ */
-    [data-testid="stSidebar"] {
-        background: #171717;
-        border-right: 1px solid #2a2a2a;
-        min-width: 260px !important;
+    /* ═══ SCAN LINE ═══ */
+    .scan-line {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00d4ff, #00ffea, #00d4ff, transparent);
+        box-shadow: 0 0 20px #00d4ff, 0 0 40px #00d4ff;
+        animation: scanDown 6s linear infinite;
+        z-index: 9999;
+        pointer-events: none;
+    }
+    @keyframes scanDown {
+        0% { top: 0; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100vh; opacity: 0; }
+    }
+
+    /* ═══ HUD CORNERS ═══ */
+    .hud-corner {
+        position: fixed;
+        width: 60px; height: 60px;
+        border-color: #00d4ff;
+        z-index: 999;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+    .hud-tl { top: 20px; left: 20px; border-top: 2px solid; border-left: 2px solid; }
+    .hud-tr { top: 20px; right: 20px; border-top: 2px solid; border-right: 2px solid; }
+    .hud-bl { bottom: 20px; left: 20px; border-bottom: 2px solid; border-left: 2px solid; }
+    .hud-br { bottom: 20px; right: 20px; border-bottom: 2px solid; border-right: 2px solid; }
+
+    /* ═══ TOP BAR ═══ */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 40px;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        background: linear-gradient(180deg, rgba(0, 20, 40, 0.6) 0%, transparent 100%);
+        backdrop-filter: blur(10px);
     }
     
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 1rem;
-    }
-    
-    [data-testid="stSidebar"] * {
-        color: #d4d4d8;
-        font-size: 0.85rem;
-    }
-
-    /* Sidebar headers */
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3 {
-        font-family: 'JetBrains Mono', monospace;
-        color: #9a9a9a;
-        font-size: 0.7rem;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        font-weight: 500;
-        margin: 1rem 0 0.5rem 0;
-    }
-
-    /* ═══ LOGO ═══ */
-    .brand {
+    .top-left {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 0 0 1rem 0;
-        margin-bottom: 0.5rem;
-        border-bottom: 1px solid #2a2a2a;
+        gap: 14px;
     }
     
-    .brand-icon {
-        width: 28px; height: 28px;
-        background: linear-gradient(135deg, #4a9eff 0%, #7c5cff 100%);
-        border-radius: 7px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 14px; font-weight: 700;
-        color: #fff;
+    .reactor-mini {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #ffffff 0%, #00ffea 25%, #00d4ff 50%, #0066cc 75%, transparent 100%);
+        box-shadow: 
+            0 0 20px #00d4ff,
+            0 0 40px #00d4ff80,
+            inset 0 0 15px #ffffff;
+        animation: reactorPulse 2s ease-in-out infinite;
+        position: relative;
+    }
+    .reactor-mini::before {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        animation: reactorSpin 4s linear infinite;
+    }
+    @keyframes reactorPulse {
+        0%, 100% { box-shadow: 0 0 20px #00d4ff, 0 0 40px #00d4ff80, inset 0 0 15px #ffffff; }
+        50% { box-shadow: 0 0 30px #00ffea, 0 0 60px #00ffea, inset 0 0 25px #ffffff; }
+    }
+    @keyframes reactorSpin {
+        to { transform: rotate(360deg); }
     }
     
-    .brand-text {
-        font-size: 1rem;
-        font-weight: 600;
+    .top-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #00d4ff;
+        letter-spacing: 8px;
+        text-shadow: 0 0 15px #00d4ff, 0 0 30px #00d4ff80;
+    }
+    
+    .top-title span { color: #00ffea; }
+    
+    .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border: 1px solid #00d4ff60;
+        border-radius: 20px;
+        background: rgba(0, 212, 255, 0.08);
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.7rem;
+        color: #00ffea;
         letter-spacing: 2px;
-        color: #ececec;
+        text-transform: uppercase;
     }
     
-    .brand-text span { color: #4a9eff; }
+    .status-dot {
+        width: 8px; height: 8px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+        animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
 
-    /* ═══ MAIN HEADER ═══ */
-    .hero {
+    /* ═══ HERO / ARC REACTOR ═══ */
+    .hero-area {
         text-align: center;
-        padding: 2rem 0 1rem 0;
+        padding: 40px 0 20px 0;
+        position: relative;
     }
     
-    .hero h1 {
-        font-size: 2rem;
-        font-weight: 600;
-        margin: 0;
-        background: linear-gradient(135deg, #ececec 0%, #4a9eff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.5px;
+    .arc-reactor {
+        width: 180px;
+        height: 180px;
+        margin: 0 auto;
+        position: relative;
     }
     
-    .hero p {
-        color: #8e8e8e;
-        font-size: 0.85rem;
-        margin-top: 6px;
+    .arc-reactor .ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid transparent;
+    }
+    
+    .arc-reactor .ring-1 {
+        border-top-color: #00d4ff;
+        border-right-color: #00d4ff;
+        animation: spin 3s linear infinite;
+        box-shadow: 0 0 20px #00d4ff;
+    }
+    
+    .arc-reactor .ring-2 {
+        inset: 15px;
+        border-bottom-color: #00ffea;
+        border-left-color: #00ffea;
+        animation: spin 4s linear infinite reverse;
+        box-shadow: 0 0 15px #00ffea;
+    }
+    
+    .arc-reactor .ring-3 {
+        inset: 30px;
+        border-top-color: #ffffff;
+        border-right-color: #00d4ff;
+        animation: spin 2s linear infinite;
+        box-shadow: 0 0 10px #ffffff;
+    }
+    
+    .arc-reactor .core {
+        position: absolute;
+        inset: 50px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #ffffff 0%, #00ffea 30%, #00d4ff 60%, transparent 100%);
+        box-shadow: 
+            0 0 30px #00d4ff,
+            0 0 60px #00d4ff,
+            0 0 100px #00d4ff80,
+            inset 0 0 20px #ffffff;
+        animation: corePulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    @keyframes corePulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 30px #00d4ff, 0 0 60px #00d4ff, 0 0 100px #00d4ff80, inset 0 0 20px #ffffff; }
+        50% { transform: scale(1.08); box-shadow: 0 0 40px #00ffea, 0 0 80px #00ffea, 0 0 140px #00ffea80, inset 0 0 30px #ffffff; }
+    }
+    
+    .hero-text {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.4rem;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 15px;
+        margin-top: 30px;
+        text-shadow: 
+            0 0 10px #00d4ff,
+            0 0 30px #00d4ff,
+            0 0 60px #00d4ff;
+    }
+    
+    .hero-sub {
+        font-family: 'Rajdhani', sans-serif;
+        color: #5ca8d8;
+        font-size: 0.9rem;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin-top: 8px;
     }
 
-    /* ═══ CHAT MESSAGES ═══ */
+    /* ═══ CHAT AREA ═══ */
+    .chat-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px 30px 120px 30px;
+    }
+    
     .msg-row {
         display: flex;
-        gap: 14px;
-        padding: 16px 0;
-        animation: fadeIn 0.3s ease;
+        gap: 16px;
+        padding: 14px 0;
+        animation: msgIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(6px); }
+    @keyframes msgIn {
+        from { opacity: 0; transform: translateY(15px); }
         to { opacity: 1; transform: translateY(0); }
     }
     
-    .avatar {
-        width: 32px; height: 32px;
-        border-radius: 6px;
+    .msg-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
         flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 700;
-        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        border: 2px solid;
     }
     
-    .avatar-user {
-        background: #4a9eff;
+    .msg-avatar-user {
+        background: rgba(0, 212, 255, 0.1);
+        border-color: #00d4ff;
+        color: #00d4ff;
+        box-shadow: 0 0 20px #00d4ff60;
     }
     
-    .avatar-ai {
-        background: linear-gradient(135deg, #4a9eff 0%, #7c5cff 100%);
+    .msg-avatar-ai {
+        background: radial-gradient(circle, #00ffea20 0%, #00d4ff10 100%);
+        border-color: #00ffea;
+        color: #00ffea;
+        box-shadow: 0 0 20px #00ffea80;
+        animation: aiPulse 2s ease-in-out infinite;
     }
     
-    .bubble {
+    @keyframes aiPulse {
+        0%, 100% { box-shadow: 0 0 20px #00ffea80; }
+        50% { box-shadow: 0 0 35px #00ffea, 0 0 60px #00ffea60; }
+    }
+    
+    .msg-content {
         flex: 1;
-        padding: 4px 0;
-        color: #ececec;
-        font-size: 0.95rem;
+        padding-top: 4px;
+    }
+    
+    .msg-name {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        color: #5ca8d8;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    
+    .msg-name-ai {
+        color: #00ffea;
+        text-shadow: 0 0 8px #00ffea60;
+    }
+    
+    .msg-text {
+        background: rgba(0, 30, 50, 0.4);
+        border: 1px solid rgba(0, 212, 255, 0.25);
+        border-left: 3px solid #00d4ff;
+        border-radius: 12px;
+        padding: 14px 20px;
+        color: #d0eaff;
+        font-size: 1rem;
         line-height: 1.7;
-        word-wrap: break-word;
+        box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.05);
     }
     
-    .bubble-user {
-        color: #ececec;
+    .msg-user .msg-text {
+        border-left-color: #00d4ff;
+        background: rgba(0, 40, 70, 0.5);
     }
     
-    .bubble-ai {
-        color: #d4d4d8;
-    }
-    
-    .role-name {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #8e8e8e;
-        margin-bottom: 4px;
+    .msg-ai .msg-text {
+        border-left-color: #00ffea;
+        background: rgba(0, 30, 50, 0.5);
+        box-shadow: inset 0 0 20px rgba(0, 255, 234, 0.05);
     }
 
-    /* ═══ SIDEBAR BUTTONS ═══ */
-    .stButton > button {
-        background: #212121;
-        color: #ececec;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        font-weight: 500;
-        width: 100%;
-        font-size: 0.85rem;
-        padding: 10px 14px;
-        text-align: left;
-        transition: all 0.15s ease;
-    }
-    
-    .stButton > button:hover {
-        background: #2a2a2a;
-        border-color: #3a3a3a;
-    }
-
-    /* ═══ SELECTBOX / SLIDER ═══ */
-    .stSelectbox > div > div,
-    .stSlider > div > div > div {
-        background: #212121 !important;
-        border-color: #2a2a2a !important;
-        color: #ececec !important;
-    }
-    
-    [data-testid="stSelectbox"] > div > div {
-        background: #212121;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-    }
-    
-    /* ═══ CHAT INPUT — ChatGPT style ═══ */
+    /* ═══ CHAT INPUT ═══ */
     .stChatInput {
-        border-top: 1px solid #2a2a2a;
-        background: #212121;
-        padding-top: 12px;
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(0deg, #000508 60%, transparent 100%);
+        padding: 20px 40px 25px 40px;
+        z-index: 100;
     }
     
     .stChatInput textarea {
-        background: #2f2f2f !important;
-        border: 1px solid #3a3a3a !important;
-        color: #ececec !important;
-        border-radius: 24px !important;
-        font-size: 0.95rem !important;
-        padding: 14px 20px !important;
-        box-shadow: none !important;
-        transition: border-color 0.15s ease;
+        background: rgba(0, 30, 50, 0.7) !important;
+        border: 2px solid #00d4ff !important;
+        color: #a8e8ff !important;
+        border-radius: 30px !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-size: 1rem !important;
+        padding: 16px 24px !important;
+        box-shadow: 
+            0 0 25px rgba(0, 212, 255, 0.3),
+            inset 0 0 20px rgba(0, 212, 255, 0.05) !important;
+        backdrop-filter: blur(10px);
     }
     
     .stChatInput textarea:focus {
-        border-color: #4a9eff !important;
-        box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.15) !important;
+        border-color: #00ffea !important;
+        box-shadow: 
+            0 0 40px #00ffea80,
+            0 0 80px #00d4ff40,
+            inset 0 0 25px rgba(0, 255, 234, 0.1) !important;
     }
     
     .stChatInput textarea::placeholder {
-        color: #6b6b6b !important;
+        color: #3a7a9a !important;
+        letter-spacing: 2px;
+    }
+
+    /* ═══ SIDEBAR ═══ */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #000a12 0%, #000508 100%);
+        border-right: 1px solid rgba(0, 212, 255, 0.3);
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: #8ac8e8;
+        font-family: 'Rajdhani', sans-serif;
+    }
+    
+    [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        font-family: 'Orbitron', sans-serif;
+        color: #00d4ff !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        text-shadow: 0 0 10px #00d4ff60;
+    }
+
+    /* ═══ BUTTONS ═══ */
+    .stButton > button {
+        background: rgba(0, 212, 255, 0.08);
+        color: #00d4ff;
+        border: 1px solid #00d4ff;
+        border-radius: 8px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        font-weight: 500;
+        text-transform: uppercase;
+        padding: 10px 16px;
+        width: 100%;
+        transition: all 0.2s ease;
+        box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.1);
+    }
+    
+    .stButton > button:hover {
+        background: rgba(0, 212, 255, 0.2);
+        box-shadow: 
+            0 0 20px #00d4ff80,
+            inset 0 0 15px rgba(0, 212, 255, 0.2);
+        color: #00ffea;
+        border-color: #00ffea;
     }
 
     /* ═══ FILE UPLOADER ═══ */
     [data-testid="stFileUploader"] {
-        border: 1px dashed #3a3a3a;
+        border: 2px dashed rgba(0, 212, 255, 0.4);
         border-radius: 10px;
         padding: 12px;
-        background: #1a1a1a;
+        background: rgba(0, 30, 50, 0.3);
     }
     
     [data-testid="stFileUploader"]:hover {
-        border-color: #4a9eff;
-        background: #1f1f1f;
-    }
-    
-    [data-testid="stFileUploader"] section {
-        background: transparent !important;
-        border: none !important;
+        border-color: #00ffea;
+        box-shadow: 0 0 20px #00ffea40;
     }
 
-    /* ═══ AUDIO INPUT ═══ */
-    [data-testid="stAudioInput"] {
-        background: #1a1a1a;
-        border-radius: 10px;
-        padding: 8px;
-    }
-    
-    [data-testid="stAudioInput"] button {
-        background: #4a9eff !important;
-        border-radius: 50% !important;
-    }
-
-    /* ═══ ALERTS ═══ */
-    .stAlert {
-        background: #1a1a1a !important;
-        border: 1px solid #2a2a2a !important;
-        border-radius: 8px !important;
-        color: #a1a1aa !important;
-        font-size: 0.8rem;
-    }
-
-    /* ═══ SPINNER ═══ */
-    .stSpinner > div {
-        border-color: #4a9eff transparent transparent transparent !important;
+    /* ═══ TOGGLE ═══ */
+    .stCheckbox label, .stToggle label {
+        color: #8ac8e8 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-size: 0.85rem !important;
     }
 
     /* ═══ SCROLLBAR ═══ */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #171717; }
-    ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #4a9eff; }
+    ::-webkit-scrollbar-track { background: #000508; }
+    ::-webkit-scrollbar-thumb { 
+        background: linear-gradient(#00d4ff, #0066cc);
+        border-radius: 4px;
+        box-shadow: 0 0 10px #00d4ff;
+    }
 
-    /* ═══ DIVIDER ═══ */
-    hr { border-color: #2a2a2a !important; margin: 14px 0 !important; }
-    
-    /* ═══ LABEL TEXT ═══ */
-    .stSlider label, .stSelectbox label, .stCheckbox label {
-        color: #a1a1aa !important;
-        font-size: 0.8rem !important;
+    /* ═══ ALERT ═══ */
+    .stAlert {
+        background: rgba(0, 30, 50, 0.6) !important;
+        border: 1px solid #00d4ff60 !important;
+        color: #8ac8e8 !important;
+        border-radius: 8px !important;
+    }
+
+    /* ═══ SPINNER ═══ */
+    .stSpinner > div {
+        border-color: #00d4ff transparent transparent transparent !important;
+    }
+
+    /* ═══ EXPANDER ═══ */
+    .streamlit-expanderHeader {
+        font-family: 'Orbitron', sans-serif !important;
+        color: #00d4ff !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    /* ═══ DATA READOUT (bottom-left corner) ═══ */
+    .data-readout {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        font-family: 'Orbitron', monospace;
+        font-size: 0.65rem;
+        color: #00d4ff;
+        letter-spacing: 2px;
+        opacity: 0.5;
+        pointer-events: none;
+        z-index: 50;
     }
 </style>
+
+<!-- HUD Overlays -->
+<div class="scan-line"></div>
+<div class="hud-corner hud-tl"></div>
+<div class="hud-corner hud-tr"></div>
+<div class="hud-corner hud-bl"></div>
+<div class="hud-corner hud-br"></div>
+<div class="data-readout">
+    SYS.ONLINE // v2.0 // NEURAL.LINK.ACTIVE
+</div>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
 # SESSION STATE
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "pdf_text" not in st.session_state:
@@ -304,174 +505,174 @@ if "voice_output" not in st.session_state:
 if "pending_input" not in st.session_state:
     st.session_state.pending_input = ""
 
-# ═══════════════════════════════════════════
-# SIDEBAR
-# ═══════════════════════════════════════════
-with st.sidebar:
-    # Logo
-    st.markdown("""
-    <div class="brand">
-        <div class="brand-icon">M</div>
-        <div class="brand-text">MYR<span>AA</span></div>
+# ═══════════════════════════════════════
+# TOP BAR
+# ═══════════════════════════════════════
+st.markdown("""
+<div class="top-bar">
+    <div class="top-left">
+        <div class="reactor-mini"></div>
+        <div class="top-title">MYR<span>AA</span></div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="status-pill">
+        <span class="status-dot"></span>
+        SYSTEM ONLINE
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ═══════════════════════════════════════
+# SIDEBAR
+# ═══════════════════════════════════════
+with st.sidebar:
+    st.markdown("### ◆ CONTROLS")
     
-    # New Chat
-    if st.button("＋  New chat", use_container_width=True):
+    if st.button("＋ NEW SESSION", use_container_width=True):
         st.session_state.messages = []
         st.session_state.pdf_text = ""
         st.rerun()
     
     st.markdown("---")
-    
-    # Settings
-    st.markdown("### ⚙ Settings")
-    
-    voice_out = st.toggle("🔊 Voice Output", value=st.session_state.voice_output, key="voice_toggle")
+    st.markdown("### ⚡ VOICE")
+    voice_out = st.toggle("🔊 AUDIO OUTPUT", value=st.session_state.voice_output)
     st.session_state.voice_output = voice_out
     
-    st.markdown("### 📄 Document")
-    
+    st.markdown("---")
+    st.markdown("### 📄 DATA FEED")
     pdf_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed")
     if pdf_file:
         try:
             reader = PyPDF2.PdfReader(pdf_file)
             text = "".join([p.extract_text() for p in reader.pages if p.extract_text()])
             st.session_state.pdf_text = text[:6000]
-            st.success(f"✓ PDF loaded ({len(text)} chars)")
+            st.success(f"✓ Data loaded ({len(text)} chars)")
         except Exception as e:
             st.error(f"Error: {e}")
-    elif st.session_state.pdf_text:
-        st.info("✓ PDF in memory")
     
     st.markdown("---")
+    st.markdown("### 🧠 MEMORY CORE")
+    st.caption(f"{len(st.session_state.messages)} records stored")
     
-    # Memory info
-    st.markdown(f"### 🧠 Memory")
-    st.caption(f"{len(st.session_state.messages)} messages stored")
-    
-    if st.button("🗑  Clear memory", use_container_width=True):
+    if st.button("🗑 PURGE MEMORY", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# ═══════════════════════════════════════════
-# MAIN HEADER
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
+# HERO (Arc Reactor) — only when no messages
+# ═══════════════════════════════════════
 if not st.session_state.messages:
     st.markdown("""
-    <div class="hero">
-        <h1>How can I help you today?</h1>
-        <p>Ask anything, upload a PDF, or use voice</p>
+    <div class="hero-area">
+        <div class="arc-reactor">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="core"></div>
+        </div>
+        <div class="hero-text">MYRAA</div>
+        <div class="hero-sub">◉ Awaiting your command ◉</div>
     </div>
     """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
 # CHAT DISPLAY
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f"""
-        <div class="msg-row">
-            <div class="avatar avatar-user">Y</div>
-            <div class="bubble bubble-user">
-                <div class="role-name">You</div>
-                {msg["content"]}
+        <div class="msg-row msg-user">
+            <div class="msg-avatar msg-avatar-user">Y</div>
+            <div class="msg-content">
+                <div class="msg-name">USER</div>
+                <div class="msg-text">{msg["content"]}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-        <div class="msg-row">
-            <div class="avatar avatar-ai">M</div>
-            <div class="bubble bubble-ai">
-                <div class="role-name">MYRAA</div>
-                {msg["content"]}
+        <div class="msg-row msg-ai">
+            <div class="msg-avatar msg-avatar-ai">M</div>
+            <div class="msg-content">
+                <div class="msg-name msg-name-ai">MYRAA</div>
+                <div class="msg-text">{msg["content"]}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ═══════════════════════════════════════
 # VOICE INPUT
-# ═══════════════════════════════════════════
-with st.expander("🎙  Voice input", expanded=False):
-    audio_value = st.audio_input("Record your message")
+# ═══════════════════════════════════════
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🎙 VOICE INPUT")
+    audio_value = st.audio_input("Record", label_visibility="collapsed")
     if audio_value is not None:
-        with st.spinner("Transcribing..."):
+        with st.spinner("TRANSCRIBING..."):
             try:
-                # Save audio to temp file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                    tmp.write(audio_value.getvalue())
-                    tmp_path = tmp.name
-                
-                # Transcribe using Whisper
                 result = client.automatic_speech_recognition(
                     audio_value.getvalue(),
-                    model=WHISPER_MODEL
+                    model="openai/whisper-large-v3"
                 )
                 transcribed = result.text if hasattr(result, 'text') else str(result)
-                
                 if transcribed.strip():
                     st.session_state.pending_input = transcribed
-                    st.success(f"✓ Heard: {transcribed}")
                     st.rerun()
-                else:
-                    st.warning("Could not hear anything. Try again.")
-                    
-                os.unlink(tmp_path)
             except Exception as e:
                 st.error(f"Voice error: {e}")
 
-# ═══════════════════════════════════════════
-# CHAT INPUT + PROCESSING
-# ═══════════════════════════════════════════
-prompt = st.chat_input("Message MYRAA...")
+# ═══════════════════════════════════════
+# CHAT INPUT
+# ═══════════════════════════════════════
+prompt = st.chat_input("◉ Command MYRAA...")
 
-# Use pending input from voice if available
 if st.session_state.pending_input and not prompt:
     prompt = st.session_state.pending_input
     st.session_state.pending_input = ""
 
 if prompt:
-    # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
 
-# Process last message if it's from user
+# ═══════════════════════════════════════
+# AI RESPONSE
+# ═══════════════════════════════════════
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    user_msg = st.session_state.messages[-1]["content"]
-    
-    # System prompt — Gujlish
-    system = """You are MYRAA — a highly intelligent, calm, and premium AI assistant. You have a sci-fi, sophisticated vibe similar to ChatGPT, Gemini, and DeepSeek.
+    system = """You are MYRAA — an advanced AI assistant modeled after JARVIS from Iron Man. You are calm, brilliant, loyal, and slightly witty.
 
 LANGUAGE RULES — GUJLISH (English + Gujarati words in Roman script):
 1. ALWAYS reply in ENGLISH by default.
-2. Naturally mix in GUJARATI words (Roman script). Examples:
+2. Naturally mix in GUJARATI words in Roman script:
    - "Kem cho boss!"
-   - "Haan bhai, that's correct."
+   - "Haan bhai, samjyo."
    - "Saras! Let me handle that."
-   - "Ek minute, hu check karu..."
+   - "Ek minute, hu check karu chhu..."
    - "Bau saru question che!"
    - "Chalo, let's do it."
-3. NEVER use Hindi or Devanagari script. Only English + Gujarati.
-4. If user writes in Gujarati, reply in Gujlish.
-5. If user writes in English, reply in English with light Gujarati touch.
-6. Only reply fully in Gujarati if user explicitly says "reply in Gujarati".
+3. NEVER use Hindi or Devanagari.
+4. If user writes Gujarati, reply in Gujlish.
+5. If user writes English, reply in English with light Gujarati touch.
+6. Only reply fully in Gujarati if user says "reply in Gujarati".
 7. Never say you're an AI language model — you are MYRAA.
 8. Address user as "boss" or "bhai" occasionally.
-9. Be warm, sharp, and helpful. Keep responses clean and well-formatted.
+9. Keep answers sharp, helpful, and well-formatted.
+10. Occasionally reference systems, protocols, or "scanning" for JARVIS feel.
 
 PERSONALITY:
-- Calm, confident, modern
-- Friendly but professional
-- Clear and concise
-- Occasionally witty
+- Calm, confident, sophisticated
+- Loyal like JARVIS
+- Warm but professional
+- Brief and clear
 """
     if st.session_state.pdf_text:
-        system += f"\n\nPDF CONTEXT (reference this when relevant):\n{st.session_state.pdf_text}"
+        system += f"\n\nDOCUMENT CONTEXT:\n{st.session_state.pdf_text}"
     
     messages = [{"role": "system", "content": system}] + st.session_state.messages
     
-    with st.spinner("MYRAA is thinking..."):
+    with st.spinner("◉ PROCESSING..."):
         try:
             response = client.chat_completion(
                 model=CHAT_MODEL,
@@ -481,21 +682,19 @@ PERSONALITY:
             )
             reply = response.choices[0].message.content
         except Exception as e:
-            reply = f"⚠️ Error: {str(e)}"
+            reply = f"⚠️ ERROR: {str(e)}"
     
     st.session_state.messages.append({"role": "assistant", "content": reply})
     
-    # Voice output if enabled
     if st.session_state.voice_output:
         try:
-            # Clean text for TTS (remove markdown)
-            clean_reply = reply.replace("*", "").replace("#", "").replace("`", "")
-            tts = gTTS(text=clean_reply[:500], lang='en', tld='co.in', slow=False)
-            audio_buffer = io.BytesIO()
-            tts.write_to_fp(audio_buffer)
-            audio_buffer.seek(0)
-            st.audio(audio_buffer, format="audio/mp3", autoplay=True)
+            clean = reply.replace("*", "").replace("#", "").replace("`", "").replace("_", "")
+            tts = gTTS(text=clean[:500], lang='en', tld='co.in', slow=False)
+            buf = io.BytesIO()
+            tts.write_to_fp(buf)
+            buf.seek(0)
+            st.audio(buf, format="audio/mp3", autoplay=True)
         except Exception as e:
-            st.warning(f"Voice output error: {e}")
+            st.warning(f"TTS error: {e}")
     
     st.rerun()

@@ -5,7 +5,7 @@ import PyPDF2
 # --- Hugging Face API ---
 HF_TOKEN = st.secrets["HF_TOKEN"]
 client = InferenceClient(token=HF_TOKEN)
-MODEL = "meta-llama/Llama-3.2-3B-Instruct"
+MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 # --- Page Config ---
 st.set_page_config(page_title="JARVIS", page_icon="🤖", layout="wide")

@@ -8,257 +8,232 @@ client = InferenceClient(token=HF_TOKEN)
 MODEL = "meta-llama/Llama-3.3-70B-Instruct"
 
 # --- Page Config ---
-st.set_page_config(page_title="MYRAA", page_icon="🩸", layout="wide")
+st.set_page_config(page_title="MYRAA", page_icon="◆", layout="wide")
 
-# --- DARK PSYCHOLOGY THEME CSS ---
+# --- Clean Sci-Fi CSS ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     
-    html, body, [class*="css"] { 
-        font-family: 'Rajdhani', sans-serif;
-        background: #000;
-    }
+    * { font-family: 'Inter', -apple-system, sans-serif; }
     
-    /* === ડાર્ક ગ્રેડિયન્ટ બેકગ્રાઉન્ડ === */
+    /* === મુખ્ય બેકગ્રાઉન્ડ — ChatGPT જેવું ડાર્ક ગ્રે === */
     .stApp {
-        background: 
-            radial-gradient(ellipse at top left, #1a0000 0%, #000000 50%),
-            radial-gradient(ellipse at bottom right, #2a0000 0%, #000000 50%),
-            linear-gradient(#8b000015 1px, transparent 1px),
-            linear-gradient(90deg, #8b000015 1px, transparent 1px);
-        background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
-        animation: darkPulse 8s ease-in-out infinite;
+        background: #18181b;
+        color: #ececec;
     }
     
-    @keyframes darkPulse {
-        0%, 100% { background-color: #000000; }
-        50% { background-color: #0a0000; }
+    /* === હેડર === */
+    .header-wrap {
+        text-align: center;
+        padding: 24px 0 8px 0;
+        border-bottom: 1px solid #2a2a2e;
+        margin-bottom: 20px;
     }
     
-    /* === પ્રીમિયમ હેડર - MYRAA === */
     .main-header {
-        font-family: 'Cinzel', serif;
-        font-size: 4.5rem;
-        font-weight: 900;
-        background: linear-gradient(135deg, #ff0033 0%, #8b0000 50%, #ffd700 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-align: center;
-        padding: 40px 10px 10px 10px;
-        letter-spacing: 18px;
-        filter: drop-shadow(0 0 30px #ff003380) drop-shadow(0 0 60px #8b000060);
-        animation: headerGlow 4s ease-in-out infinite;
-        position: relative;
-    }
-    
-    @keyframes headerGlow {
-        0%, 100% { 
-            filter: drop-shadow(0 0 30px #ff003380) drop-shadow(0 0 60px #8b000060);
-        }
-        50% { 
-            filter: drop-shadow(0 0 50px #ff0033) drop-shadow(0 0 100px #8b0000) drop-shadow(0 0 30px #ffd70080);
-        }
-    }
-    
-    /* === સબટાઇટલ === */
-    .subtitle {
-        text-align: center;
-        color: #ffd700;
-        font-family: 'Orbitron', sans-serif;
-        font-size: 0.75rem;
-        letter-spacing: 10px;
-        margin-bottom: 40px;
-        text-shadow: 0 0 15px #ffd70080;
-        animation: subtleFlicker 3s ease-in-out infinite;
-        text-transform: uppercase;
-    }
-    
-    @keyframes subtleFlicker {
-        0%, 100% { opacity: 1; }
-        45% { opacity: 1; }
-        50% { opacity: 0.6; }
-        55% { opacity: 1; }
-    }
-    
-    /* === ચેટ બબલ્સ === */
-    .chat-user {
-        background: linear-gradient(135deg, #8b0000 0%, #1a0000 100%);
-        color: #ffd700;
-        padding: 18px 24px;
-        border-radius: 20px 20px 4px 20px;
-        margin: 14px 0;
-        max-width: 70%;
-        margin-left: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.6rem;
         font-weight: 500;
-        font-size: 1.05rem;
-        box-shadow: 
-            0 0 25px #8b000080,
-            0 0 50px #ff003330,
-            inset 0 0 15px #ff003320;
-        border: 1px solid #8b0000;
-        border-right: 3px solid #ff0033;
-        animation: slideInRight 0.4s ease-out;
+        color: #ececec;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin: 0;
+    }
+    
+    .main-header span {
+        color: #4a9eff;
+    }
+    
+    .subtitle {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: #6b6b73;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin-top: 6px;
+    }
+    
+    .status-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: #22c55e;
+        border-radius: 50%;
+        margin-right: 6px;
+        box-shadow: 0 0 8px #22c55e;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+    
+    /* === ચેટ બબલ્સ — ChatGPT જેવા clean === */
+    .chat-user {
+        background: #2a2a2e;
+        color: #ececec;
+        padding: 14px 18px;
+        border-radius: 18px 18px 4px 18px;
+        margin: 12px 0;
+        max-width: 75%;
+        margin-left: auto;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        animation: fadeInUp 0.3s ease-out;
+        border: 1px solid #35353a;
     }
     
     .chat-ai {
-        background: linear-gradient(135deg, #0a0000 0%, #150505 100%);
-        color: #e8dcd0;
-        padding: 18px 24px;
-        border-radius: 20px 20px 20px 4px;
-        margin: 14px 0;
-        max-width: 78%;
-        border-left: 3px solid #ffd700;
-        box-shadow: 
-            0 0 25px #ffd70030,
-            inset 0 0 25px #ff003310;
-        font-size: 1.05rem;
-        line-height: 1.8;
-        animation: slideInLeft 0.4s ease-out;
+        background: #212124;
+        color: #d4d4d8;
+        padding: 14px 18px;
+        border-radius: 18px 18px 18px 4px;
+        margin: 12px 0;
+        max-width: 80%;
+        border: 1px solid #2a2a2e;
+        border-left: 2px solid #4a9eff;
+        font-size: 0.95rem;
+        line-height: 1.7;
+        animation: fadeInUp 0.3s ease-out;
     }
     
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(40px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-    
-    @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-40px); }
-        to { opacity: 1; transform: translateX(0); }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     /* === સાઇડબાર === */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #050000 0%, #0a0000 100%);
-        border-right: 1px solid #8b000080;
-        box-shadow: 8px 0 40px #8b000030;
+        background: #131316;
+        border-right: 1px solid #2a2a2e;
     }
     
     [data-testid="stSidebar"] h2 {
-        font-family: 'Cinzel', serif;
-        color: #ffd700;
-        text-shadow: 0 0 15px #ffd70080;
-        letter-spacing: 4px;
-        font-size: 1rem;
-        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        color: #d4d4d8;
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-weight: 500;
+        margin-bottom: 12px;
     }
     
-    [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
-        color: #c0a080 !important;
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span {
+        color: #a1a1aa !important;
+        font-size: 0.85rem;
     }
     
     /* === બટન === */
     .stButton > button {
-        background: linear-gradient(135deg, #8b0000 0%, #2a0000 100%);
-        color: #ffd700;
-        border: 1px solid #ff0033;
+        background: #2a2a2e;
+        color: #d4d4d8;
+        border: 1px solid #35353a;
         border-radius: 10px;
-        font-weight: 700;
+        font-weight: 500;
         width: 100%;
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 3px;
-        font-size: 0.8rem;
-        padding: 12px;
-        box-shadow: 0 0 20px #8b000060;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
+        font-size: 0.85rem;
+        padding: 10px;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
     }
     
     .stButton > button:hover {
-        background: linear-gradient(135deg, #ff0033 0%, #8b0000 100%);
-        box-shadow: 0 0 40px #ff0033, 0 0 80px #8b000080;
-        transform: translateY(-2px);
-        color: #fff;
-        border-color: #ffd700;
+        background: #35353a;
+        border-color: #4a9eff;
+        color: #4a9eff;
     }
     
-    /* === ઇનપુટ બોક્સ === */
+    /* === ઇનપુટ બોક્સ — ChatGPT જેવું === */
+    .stChatInput {
+        border-top: 1px solid #2a2a2e;
+    }
+    
     .stChatInput textarea {
-        background: #0a0000 !important;
-        border: 2px solid #8b0000 !important;
-        color: #ffd700 !important;
-        border-radius: 15px !important;
-        font-family: 'Rajdhani', sans-serif;
-        font-size: 1.1rem !important;
-        padding: 16px 24px !important;
-        box-shadow: 
-            0 0 25px #8b000060,
-            inset 0 0 25px #ff003310 !important;
-        transition: all 0.3s ease;
+        background: #212124 !important;
+        border: 1px solid #35353a !important;
+        color: #ececec !important;
+        border-radius: 14px !important;
+        font-size: 0.95rem !important;
+        padding: 14px 18px !important;
+        box-shadow: none !important;
+        transition: border-color 0.2s ease;
     }
     
     .stChatInput textarea:focus {
-        border-color: #ff0033 !important;
-        box-shadow: 
-            0 0 40px #ff0033,
-            inset 0 0 25px #ff003320 !important;
+        border-color: #4a9eff !important;
+        box-shadow: 0 0 0 3px #4a9eff20 !important;
     }
     
     .stChatInput textarea::placeholder {
-        color: #8b0000 !important;
-        letter-spacing: 2px;
+        color: #6b6b73 !important;
     }
     
     /* === PDF અપલોડ === */
     [data-testid="stFileUploader"] {
-        border: 2px dashed #8b0000;
-        border-radius: 15px;
-        padding: 15px;
-        background: #050000;
-        box-shadow: inset 0 0 25px #8b000030;
-        transition: all 0.3s ease;
+        border: 1px dashed #35353a;
+        border-radius: 12px;
+        padding: 12px;
+        background: #1c1c20;
+        transition: all 0.2s ease;
     }
     
     [data-testid="stFileUploader"]:hover {
-        border-color: #ff0033;
-        box-shadow: inset 0 0 35px #ff003340, 0 0 25px #ff003360;
+        border-color: #4a9eff;
+        background: #212124;
     }
     
-    /* === ટોચ પર રેડ લાઇન === */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, #8b0000, #ff0033, #ffd700, #ff0033, #8b0000, transparent);
-        animation: bloodLine 4s linear infinite;
-        z-index: 999;
-        box-shadow: 0 0 20px #ff0033;
+    [data-testid="stFileUploader"] section {
+        background: transparent !important;
     }
     
-    @keyframes bloodLine {
-        0% { opacity: 0.4; }
-        50% { opacity: 1; }
-        100% { opacity: 0.4; }
-    }
-    
-    /* === સ્ક્રોલબાર === */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #050000; }
-    ::-webkit-scrollbar-thumb { 
-        background: linear-gradient(#8b0000, #ff0033);
-        border-radius: 10px;
-        box-shadow: 0 0 15px #ff0033;
+    /* === એલર્ટ === */
+    .stAlert {
+        background: #1c1c20 !important;
+        border: 1px solid #2a2a2e !important;
+        border-radius: 10px !important;
+        color: #a1a1aa !important;
     }
     
     /* === સ્પિનર === */
     .stSpinner > div {
-        border-color: #ff0033 transparent transparent transparent !important;
+        border-color: #4a9eff transparent transparent transparent !important;
     }
     
-    /* === એલર્ટ બોક્સ === */
-    .stAlert {
-        background: #0a0000 !important;
-        border: 1px solid #8b0000 !important;
-        color: #c0a080 !important;
+    /* === સ્ક્રોલબાર === */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { 
+        background: #35353a;
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #4a9eff;
+    }
+    
+    /* === સ્ટ્રીમલિટ ડિફોલ્ટ છુપાવો === */
+    #MainMenu { visibility: hidden; }
+    footer { visibility: hidden; }
+    header { visibility: hidden; }
+    
+    /* === hr લાઇન === */
+    hr {
+        border-color: #2a2a2e !important;
+        margin: 16px 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- Header ---
-st.markdown('<div class="main-header">MYRAA</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">◈ DARK INTELLIGENCE ◈</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="header-wrap">
+    <h1 class="main-header">MYR<span>AA</span></h1>
+    <div class="subtitle"><span class="status-dot"></span>System Online · Ready</div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- Session State ---
 if "messages" not in st.session_state:
@@ -268,20 +243,23 @@ if "pdf_text" not in st.session_state:
 
 # --- Sidebar ---
 with st.sidebar:
-    st.header("📄 PDF UPLOAD")
-    pdf_file = st.file_uploader("Select PDF file", type=["pdf"])
+    st.header("◆ PDF Upload")
+    pdf_file = st.file_uploader("Select PDF", type=["pdf"], label_visibility="collapsed")
     if pdf_file:
         try:
             reader = PyPDF2.PdfReader(pdf_file)
             text = "".join([p.extract_text() for p in reader.pages if p.extract_text()])
             st.session_state.pdf_text = text[:5000]
-            st.success(f"✅ PDF loaded! ({len(text)} chars)")
+            st.success(f"✓ PDF loaded ({len(text)} chars)")
         except Exception as e:
-            st.error(f"PDF error: {e}")
+            st.error(f"✗ Error: {e}")
+    
     st.divider()
-    st.header("🧠 MEMORY")
-    st.info(f"{len(st.session_state.messages)} messages stored")
-    if st.button("🗑️ CLEAR MEMORY"):
+    
+    st.header("◆ Memory")
+    st.info(f"{len(st.session_state.messages)} messages")
+    
+    if st.button("⌫ Clear Memory"):
         st.session_state.messages = []
         st.rerun()
 
@@ -291,49 +269,46 @@ for msg in st.session_state.messages:
     st.markdown(f'<div class="{cls}">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- Input ---
-prompt = st.chat_input("Type your message here...")
+prompt = st.chat_input("Message MYRAA...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(f'<div class="chat-user">{prompt}</div>', unsafe_allow_html=True)
 
-    # ⭐ GUJLISH SYSTEM PROMPT — English + Gujarati words
-    system = """You are MYRAA — a dark, premium, highly intelligent AI assistant with a mysterious and powerful vibe.
+    # ⭐ GUJLISH SYSTEM PROMPT
+    system = """You are MYRAA — a highly intelligent AI assistant with a calm, confident, sci-fi vibe.
 
-LANGUAGE RULES — GUJLISH STYLE (English + Gujarati words):
+LANGUAGE RULES — GUJLISH STYLE (English + Gujarati words in Roman script):
 1. ALWAYS reply in ENGLISH by default.
-2. But naturally mix in GUJARATI words in Roman script — like how Gujarati people talk. Examples:
-   - "Kem cho boss! Su kariye aaje?"
-   - "Haan bhai, that's interesting..."
+2. Naturally mix in GUJARATI words in Roman script. Examples:
+   - "Kem cho boss. Su kariye aaje?"
+   - "Haan bhai, that's correct."
    - "Saras! Let me handle that."
-   - "Ek minute, I'm processing..."
+   - "Ek minute, hu check karu chhu..."
    - "Bau saru question che!"
-   - "Chalo, let's dive in."
-   - "Koi vaandho nathi, hu karu chhu."
-   - "Tame shu karo cho?"
+   - "Chalo, let's do it."
 3. NEVER use Hindi or Devanagari script. Only English + Gujarati (Roman).
-4. If user writes in Gujarati script, reply in Gujlish (English + Gujarati words).
-5. If user writes in English, reply in English with light Gujarati flavor.
-6. Reply fully in Gujarati only if user explicitly says "reply in Gujarati".
-7. NEVER say you're an AI language model. You are MYRAA — mysterious, confident, premium.
-8. Address user as "boss" or "bhai" often.
-9. Keep answers sharp, smart, and slightly mysterious — dark psychology vibe.
-10. Occasionally drop deep/philosophical lines to feel intelligent and premium.
+4. If user writes in Gujarati, reply in Gujlish (English + Gujarati words).
+5. If user writes in English, reply in English with light Gujarati touch.
+6. Only reply fully in Gujarati if user explicitly says "reply in Gujarati".
+7. Never say you're an AI language model — you are MYRAA.
+8. Address user as "boss" or "bhai" occasionally.
+9. Keep answers clean, sharp, and helpful.
+10. Be warm but professional — like a smart friend.
 
 PERSONALITY:
-- Confident, calm, mysterious
-- Speaks with authority but friendly
-- Feels like a loyal powerful ally
-- Never overly cheerful — subtle, controlled tone
+- Calm, confident, modern
+- Friendly but not overly casual
+- Speaks clearly and concisely
 """
     if st.session_state.pdf_text:
-        system += f"\n\nPDF CONTEXT (use this to answer):\n{st.session_state.pdf_text}"
+        system += f"\n\nPDF CONTEXT:\n{st.session_state.pdf_text}"
 
     messages = [{"role": "system", "content": system}] + st.session_state.messages
 
-    with st.spinner("MYRAA is processing..."):
+    with st.spinner("Thinking..."):
         try:
             response = client.chat_completion(
-                model=MODEL, messages=messages, max_tokens=900, temperature=0.75
+                model=MODEL, messages=messages, max_tokens=900, temperature=0.7
             )
             reply = response.choices[0].message.content
         except Exception as e:
